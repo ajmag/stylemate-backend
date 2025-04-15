@@ -5,10 +5,10 @@ from app.config import settings
 def create_chromadb_client() -> chromadb.Client:
     """Create and return chromadb client"""
 
-    # make sure directory exitst - will use on local for initial dev
+    # make sure directory exists - will use on local for initial dev
     os.makedirs(settings.CHROMA_DB_DIR, exist_ok=True)
 
-    # create the presistant client
+    # create the persistent client
     return chromadb.PersistentClient(path=settings.CHROMA_DB_DIR)
 
 def get_or_create_collection(client, collection_name="clothing_items"):
