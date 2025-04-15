@@ -1,2 +1,11 @@
 # Python virtual environments
 venv/
+
+
+.env
+
+
+./chromadb
+
+
+.vscode
