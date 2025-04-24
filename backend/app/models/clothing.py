@@ -20,12 +20,45 @@ class ClothingCategory(str, Enum):
     SHIRT = "shirt"
     BLOUSE = "blouse"
     SWEATER = "sweater"
+    TANK = "tank"
+    POLO = "polo"
+    HOODIE = "hoodie"
+    
     # Bottoms
     PANTS = "pants"
     JEANS = "jeans"
     SHORTS = "shorts"
     SKIRT = "skirt"
-    # This can be expanded as needed
+    LEGGINGS = "leggings"
+    
+    # Dress
+    CASUAL_DRESS = "casual_dress"
+    FORMAL_DRESS = "formal_dress"
+    MAXI_DRESS = "maxi_dress"
+    MINI_DRESS = "mini_dress"
+    
+    # Outerwear
+    JACKET = "jacket"
+    COAT = "coat"
+    BLAZER = "blazer"
+    VEST = "vest"
+    CARDIGAN = "cardigan"
+    
+    # Footwear
+    SNEAKERS = "sneakers"
+    BOOTS = "boots"
+    DRESS_SHOES = "dress_shoes"
+    SANDALS = "sandals"
+    HEELS = "heels"
+    
+    # Accessory
+    HAT = "hat"
+    SCARF = "scarf"
+    BAG = "bag"
+    JEWELRY = "jewelry"
+    BELT = "belt"
+    SUNGLASSES = "sunglasses"
+    GLOVES = "gloves"
 
 class Season(str, Enum):
     """Seasons for clothing items."""

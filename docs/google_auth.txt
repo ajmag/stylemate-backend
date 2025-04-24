@@ -1,0 +1,42 @@
+Google Cloud Authentication Setup
+
+## Installation of Google Cloud CLI
+1. Downloaded Google Cloud CLI 
+2. Ran installation script: `./google-cloud-sdk/install.sh`
+3. Accepted prompts to:
+   - Update `.zshrc` file with PATH settings
+   - Enable command completion
+   - Setup Python environment
+
+Authentication for Vision API
+For using the Vision API in our application code, we performed application default credential authentication:
+
+```
+gcloud auth application-default login
+```
+
+This command:
+- Opens a browser window for Google account login
+- Requests permissions to access Google Cloud resources
+- Stores credentials in `~/.config/gcloud/application_default_credentials.json`
+- Makes these credentials automatically available to Google Cloud client libraries
+
+Then we set the project for billing and quota tracking:
+
+```
+gcloud auth application-default set-quota-project PROJECT_ID
+```
+
+Usage Notes
+- No need to set `VISION_API_KEY` or `VISION_API_URL` environment variables
+- First 1000 API units per month are free under the free tier
+- Each Vision API feature (face detection, text detection, etc.) counts as a separate unit
+- Don't set `GOOGLE_APPLICATION_CREDENTIALS` environment variable as it would override the application default credentials
+
+Next Steps
+- Enable the Vision API in Google Cloud Console
+- Ensure billing is set up for the project
+- Begin implementation in code using the appropriate client library
+
+
+Relevant repo - https://github.com/googleapis/google-cloud-python/blob/0355b4b39359768b8d81aecef1bb4d074ca28d60/packages/google-cloud-vision/google/cloud/vision_helpers/__init__.py#L29
