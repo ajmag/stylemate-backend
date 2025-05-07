@@ -1,6 +1,9 @@
 import logging
 from typing import Dict, Any, List
-from app.models.clothing import ClothingType, Season, Occasion
+from backend.app.models.clothing import ClothingType, Season, Occasion
+from backend.app.core.mapping.clothing_mappings import COLOR_MAPPING
+from backend.app.core.manager.color_matching_manager import ColorMatcher
+
 
 class ClothingEmbeddingManager:
     """Manager for handling clothing image embeddings.
@@ -11,12 +14,13 @@ class ClothingEmbeddingManager:
     def __init__(self):
         self.logger = logging.getLogger(__name__)
         self.logger.info("ClothingEmbeddingManager initialized")
+        self.color_matcher = ColorMatcher(COLOR_MAPPING)
 
     def generate_embedding(self, metadata: Dict[str, Any], api_result: Dict[str, Any]) -> List[float]:
         """Genereate a simple embedding for the clothing image."""
         self.logger.info("Generating embedding")
 
-        embedding = [0.0] * 64
+        embedding = [0.0] * 80
 
         # Incorporate label information (first 10 dimensions)
         for index, label in enumerate(api_result.get("labels", [])[:10]):
@@ -79,7 +83,52 @@ class ClothingEmbeddingManager:
         for occasion in ocasions:
             if occasion in occasions_mapping:
                 embedding[occasions_mapping[occasion]] = 1.0
+
+        color_family_idx = 47 
+        color_families = [
+            "red", "pink", "coral", "orange", "yellow", 
+            "brown", "tan", "green", "dark_green", "teal", 
+            "blue", "light_blue", "navy", "purple", "light_purple",
+            "black", "white", "gray"
+        ]
+
+        primary_family = metadata.get("color_primary_family", "")
+        if primary_family in color_families:
+            family_idx = color_family_idx + color_families.index(primary_family)
+            if family_idx < 65:  # Safety check
+                embedding[family_idx] = 1.0
         
+        # Secondary color family (if present)
+        secondary_family = metadata.get("color_secondary_family")
+        if secondary_family and secondary_family in color_families:
+            family_idx = color_family_idx + color_families.index(secondary_family)
+            if family_idx < 65:  # Safety check
+                embedding[family_idx] = 0.7  # Slightly lower weight than primary
+        
+        # Incorporate color characteristics (next 9 dimensions)
+        characteristic_idx = 65
+        primary_color = metadata.get("color_primary", "")
+        if primary_color in COLOR_MAPPING:
+            rgb = COLOR_MAPPING[primary_color]
+            characteristics = self.color_matcher.get_color_characteristics(rgb)
+
+            char_mapping = {
+                "is_light": characteristic_idx,
+                "is_dark": characteristic_idx + 1,
+                "is_saturated": characteristic_idx + 2,
+                "is_muted": characteristic_idx + 3,
+                "is_warm": characteristic_idx + 4,
+                "is_cool": characteristic_idx + 5,
+                "is_neutral": characteristic_idx + 6,
+                "is_pastel": characteristic_idx + 7,
+                "is_vibrant": characteristic_idx + 8
+            }
+
+            for char_name, is_present in characteristics.items():
+                if is_present and char_name in char_mapping:
+                    embedding[char_mapping[char_name]] = 1.0
+
+
         # Normalize the embedding
         norm = sum(x ** 2 for x in embedding) ** 0.5 # Calculating euclidean norm/magnitude
         if norm > 0:

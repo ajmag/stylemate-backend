@@ -24,14 +24,14 @@ The current phase of development concentrates on building a robust backend with 
 - Feature extraction for clothing categorization
 - Color analysis and pattern recognition
 
-#### Vector Database Integration
+#### Vector Database Integration - TODO
 
 - Generation of clothing embeddings
 - Storage in ChromaDB for efficient similarity search
 - Metadata association with embeddings
 - Query optimizations for recommendation lookups
 
-#### Recommendation Engine
+#### Recommendation Engine - TODO
 
 - Context-aware outfit generation (occasion, weather, style)
 - Clothing compatibility assessment
@@ -43,7 +43,7 @@ The current phase of development concentrates on building a robust backend with 
 - FastAPI implementation with well-defined endpoints
 - Authentication and user management
 - Performance optimization for image operations
-- Comprehensive test coverage
+- Comprehensive test coverage IN-PROGRESS
 
 ### Technology Stack
 
@@ -51,8 +51,7 @@ The current phase of development concentrates on building a robust backend with 
 
 - Python 3.9+: Primary backend language
 - FastAPI: Web framework for API endpoints
-- PyTorch/TensorFlow: Deep learning for computer vision tasks (subject to change)
-- Sentence Transformers: Generating clothing embeddings
+- Google Vision API
 - LangChain: LLM integration for outfit reasoning
 
 #### Databases
