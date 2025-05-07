@@ -113,7 +113,7 @@ class ColorMatcher:
         best_match = None
         best_score = float('inf')
 
-        for idx, lab_ditances in zip(indices, distances):
+        for idx, lab_distances in zip(indices, distances):
             name = self.color_names[idx]
             hsv_ref = self.hsv_values[idx]
 
@@ -132,7 +132,7 @@ class ColorMatcher:
                 hsv_distance = h_dist * 1.0 + s_dist * 1.0 + v_dist * 1.0
             
             # Combined score (LAB + HSV)
-            combined_distance = (lab_ditances * 0.7) + (hsv_distance * 10)
+            combined_distance = (lab_distances * 0.7) + (hsv_distance * 10)
 
             if combined_distance < best_score:
                 best_score = combined_distance

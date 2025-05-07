@@ -296,7 +296,7 @@ class ClothingMetadataManager:
         if occasion_scores[Occasion.SPORT] > 1.0:
             occasion_scores[Occasion.BUSINESS] = 0.0
             occasion_scores[Occasion.FORMAL] = 0.0
-            self.logger.debug("App")
+            self.logger.debug("Resetting BUSINESS and FORMAL occasion scores due to high SPORT score")
 
         # Get occasions with scores above a threshold (0.15)
         detected_occasions = [occasion for occasion, score in occasion_scores.items() if score > 0.15]
