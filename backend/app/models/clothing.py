@@ -76,13 +76,28 @@ class Occasion(str, Enum):
     SPORT = "sport"
     SPECIAL = "special"
 
+class ColorCharacteristic(str, Enum):
+    """Color characteristics for advanced filtering."""
+    LIGHT = "light"
+    DARK = "dark"
+    SATURATED = "saturated"
+    MUTED = "muted"
+    WARM = "warm"
+    COOL = "cool"
+    NEUTRAL = "neutral"
+    PASTEL = "pastel"
+    VIBRANT = "vibrant"
+    
 class ClothingBase(BaseModel):
     """Base model for clothing items."""
     name: str
     type: ClothingType
     category: ClothingCategory
     color_primary: str
+    color_primary_family: str
     color_secondary: Optional[str] = None
+    color_secondary_family: Optional[str] = None
+    color_characteristics: Optional[List[ColorCharacteristic]] = None
     pattern: Optional[str] = None
     seasons: List[Season] = [Season.ALL]
     occasions: List[Occasion] = [Occasion.CASUAL]

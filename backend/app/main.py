@@ -1,8 +1,8 @@
 #  will be the FASTAPI entry point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from app.api.api_test import router as test
-from app.config import settings
+from backend.app.api.api_test import router as test
+from backend.app.config import settings
 import logging
 
 logging.basicConfig(

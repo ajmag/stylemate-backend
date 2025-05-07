@@ -1,6 +1,6 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException
 import logging
-from app.core.agents.vision_agent import VisionProcessingAgent
+from backend.app.core.agents.vision_agent import VisionProcessingAgent
 
 router = APIRouter()
 logger = logging.getLogger(__name__)

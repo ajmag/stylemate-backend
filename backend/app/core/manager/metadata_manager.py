@@ -1,9 +1,8 @@
 from typing import Dict, Any, List, Tuple
 import logging
-from app.core.mapping.clothing_mappings import (CLOTHING_TYPE_MAPPING, CLOTHING_CATEGORY_MAPPING, DEFAULT_CATEGORIES, COLOR_MAPPING, PATTERN_KEYWORDS,SEASON_MAPPING, SEASON_FABRIC_MAPPING, COLOR_SEASON_MAPPING, OCCASION_MAPPING)
-from app.models.clothing import ClothingType, ClothingCategory, Season, Occasion
-from skimage import color
-import numpy as np
+from backend.app.core.mapping.clothing_mappings import (CLOTHING_TYPE_MAPPING, CLOTHING_CATEGORY_MAPPING, DEFAULT_CATEGORIES, COLOR_MAPPING, PATTERN_KEYWORDS,SEASON_MAPPING, SEASON_FABRIC_MAPPING, COLOR_SEASON_MAPPING, OCCASION_MAPPING)
+from backend.app.models.clothing import ClothingType, ClothingCategory, Season, Occasion
+from backend.app.core.manager.color_matching_manager import ColorMatcher
 
 
 class ClothingMetadataManager:
@@ -12,6 +11,7 @@ class ClothingMetadataManager:
         """Initialize the clothing metadata manager."""
         self.logger = logging.getLogger(__name__)
         self.logger.info("ClothingMetadataManager initialized")
+        self.clothing_matcher = ColorMatcher(COLOR_MAPPING)
 
     def extract_clothing_metadata(self, api_result: Dict[str, Any]) -> Dict[str, Any]: 
             """Extract clothing type, category, color, pattern from API results."""
@@ -21,7 +21,9 @@ class ClothingMetadataManager:
                 "clothing_type": ClothingType.TOP,  # Default type
                 "category": ClothingCategory.SHIRT,  # Default category
                 "color_primary": "black",  # Default color
+                "color_primary_family": "black",  # Default color family
                 "color_secondary": None,
+                "color_secondary_family": None,  # Secondary color family
                 "pattern": "solid",  # Default pattern
                 "seasons": [Season.ALL],  # Default season
                 "occasions": [Occasion.CASUAL],  # Default occasion
@@ -38,10 +40,13 @@ class ClothingMetadataManager:
             
             clothing_colors = self._extract_dominant_colors(api_result)
             if clothing_colors:
-                result["color_primary"] = clothing_colors[0]
+                result["color_primary"] = clothing_colors[0]["specific_color"]
+                result["color_primary_family"] = clothing_colors[0]["color_family"]
+                
                 if len(clothing_colors) > 1: 
-                    result["color_secondary"] = clothing_colors[1]
-            
+                    result["color_secondary"] = clothing_colors[1]["specific_color"]
+                    result["color_secondary_family"] = clothing_colors[1]["color_family"]
+
             clothing_pattern = self._determine_pattern(api_result)
             if clothing_pattern:
                 result["pattern"] = clothing_pattern
@@ -140,32 +145,6 @@ class ClothingMetadataManager:
         return self._get_default_category(clothing_type)
 
 
-    def _find_closest_color(self, rgb: Tuple[int, int, int]) -> str:
-        """Find the nearest color using a simple Euclidean distance."""
-        self.logger.debug(f"Finding closest color for RGB: {rgb}")
-        
-        color_reference = COLOR_MAPPING
-        min_dist = float("inf")
-        nearest_color = "unknown"
-        lab_color = color.rgb2lab([[rgb]])[0][0]
-
-        for color_name, color_value in color_reference.items():
-            lab_ref = color.rgb2lab([[color_value]])[0][0]
-
-            # Calculate delta E (color difference)
-            distance = np.sqrt(sum((lab_color - lab_ref) ** 2))
-
-            if distance < min_dist:
-                min_dist = distance
-                nearest_color = color_name
-        
-        if min_dist > 25:
-            self.logger.warning(f"Poor color match for {rgb}: {nearest_color} with distance {min_dist}")
-    
-        self.logger.debug(f"Nearest color for {rgb} is {nearest_color} with distance {min_dist}")
-        return nearest_color
-
-
     def _extract_dominant_colors(self, api_result: Dict[str, Any]) -> List[str]:
         """Extract dominant colors from Vision API results."""
         self.logger.debug("Extracting dominant colors")
@@ -184,10 +163,14 @@ class ClothingMetadataManager:
                 int(color_data["color"]["blue"])
             )
 
-            color_name = self._find_closest_color(rgb)
+            color_match = self.clothing_matcher.find_color_match(rgb)
 
-            if color_name not in named_colors:
-                named_colors.append(color_name)
+            if not any(colors["specific_color"] == color_match["specific_color"] for colors in named_colors):
+                named_colors.append(color_match)
+            
+            # Stop once we have enough distinct colors
+            if len(named_colors) >= 2:
+                break
 
         self.logger.debug(f"Extracted colors: {named_colors}") 
         return named_colors
@@ -229,6 +212,15 @@ class ClothingMetadataManager:
         # return default pattern 
         self.logger.debug("No pattern detected, defaulting to solid")
         return "solid"
+    
+
+    def _has_fabric_keyword(self, label_description: List[str], fabric_keywords: List[str]) -> bool:
+        """Check if any fabric keywords are present in the label description."""
+        for description in label_description:
+            for keyword in fabric_keywords:
+                if keyword in description:
+                    return True
+        return False
 
 
     def _determine_seasons(self, api_result: Dict[str, Any]) -> List[Season]:
@@ -242,12 +234,12 @@ class ClothingMetadataManager:
         season_scores = {season: 0.0 for season in Season}
 
         # Process direct season keywords
-        keyword_scores = self._process_vision_labels(api_result, SEASON_MAPPING)
+        keyword_scores = self._process_vision_labels(api_result, season_keywords)
         for season, score in keyword_scores.items():
             season_scores[season] += score
         
         # Process fabrics 
-        fabric_scores = self._process_vision_labels(api_result, SEASON_FABRIC_MAPPING, 0.3)
+        fabric_scores = self._process_vision_labels(api_result, fabric_mapping, object_weight=0.3)
         for season, score in fabric_scores.items():
             season_scores[season] += score
 
@@ -256,19 +248,38 @@ class ClothingMetadataManager:
 
         # Process top two colors
         for color_name in colors[:2]:
+            specific_color = color_name["specific_color"]
             for season, seasonal_color in color_mapping.items():
-                if color_name in seasonal_color:
-                    season_scores[season] += 0.2
+                if specific_color in seasonal_color:
+                    season_scores[season] += 0.3
         
-        detected_seasons = [season for season, score in season_scores.items() if score > 0.2]
+        label_description = [label["description"] for label in api_result.get("labels", [])]
+
+        # Fall/Winter color boost
+        cold_fabric_keywords = ["wool", "woolen", "thick", "heavy", "fleece"]
+        if self._has_fabric_keyword(label_description, cold_fabric_keywords):
+            season_scores[Season.WINTER] += 0.8
+            season_scores[Season.FALL] += 0.5
+            self.logger.debug("Boosting scores for Fall/Winter due to fabric keywords")
         
-        if not detected_seasons:
+        # For warm-weather items, boost spring/summer
+        warm_fabric_keywords = ["lightweight", "thin", "linen", "breathable", "cotton"]
+        if self._has_fabric_keyword(label_description, warm_fabric_keywords):
+            season_scores[Season.SPRING] += 0.5
+            season_scores[Season.SUMMER] += 0.8
+            self.logger.debug("Applied warm-weather boost")
+        
+        detected_seasons = [season for season, score in season_scores.items() if score > 1.0 and season != Season.ALL]
+        top_seasons = sorted(detected_seasons, key=lambda x: season_scores[x], reverse=True)
+        
+        if not top_seasons:
             self.logger.debug("No specific seasons detected, defaulting to all seasons")
             return[Season.ALL]
 
         self.logger.debug(f"Season scores: {season_scores}")
-        return detected_seasons
-        
+        self.logger.debug(f"Detected seasons: {detected_seasons} with top seasons: {top_seasons}")
+        return top_seasons[:2] # Return top 2 seasons
+
         
     def _determine_occasions(self, api_result: Dict[str, Any], clothing_type: ClothingType, pattern: str) -> List[Occasion]:
         """Determine appropriate occasions for the clothing item."""
@@ -281,6 +292,11 @@ class ClothingMetadataManager:
 
         # Apply heuristics based on clothing type and pattern
         self._apply_occasion_heuristics(occasion_scores, clothing_type, pattern)
+
+        if occasion_scores[Occasion.SPORT] > 1.0:
+            occasion_scores[Occasion.BUSINESS] = 0.0
+            occasion_scores[Occasion.FORMAL] = 0.0
+            self.logger.debug("Resetting BUSINESS and FORMAL occasion scores due to high SPORT score")
 
         # Get occasions with scores above a threshold (0.15)
         detected_occasions = [occasion for occasion, score in occasion_scores.items() if score > 0.15]
@@ -363,6 +379,7 @@ class ClothingMetadataManager:
         
         # Extract key metadata
         color_primary = metadata.get("color_primary", "unknown")
+        color_primary_family = metadata.get("color_primary_family", "unknown")
         color_secondary = metadata.get("color_secondary")
         pattern = metadata.get("pattern", "solid")
         category = metadata.get("category", "item").value  # Get string value of enum
@@ -396,6 +413,9 @@ class ClothingMetadataManager:
                 description += f", perfect for {occasion_list[0]} occasions"
             else:
                 description += f", perfect for {', '.join(occasion_list[:-1])} and {occasion_list[-1]} occasions"
+
+        if color_primary != color_primary_family:
+            description += f" (part of the {color_primary_family} family)"
 
         self.logger.debug(f"Generated description: {description}") 
         return description

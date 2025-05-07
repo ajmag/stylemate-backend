@@ -3,8 +3,8 @@ import asyncio
 from .base import Agent
 from google.cloud import vision
 from google.api_core.exceptions import GoogleAPICallError
-from app.core.manager.metadata_manager import ClothingMetadataManager
-from app.core.manager.embedding_manager import ClothingEmbeddingManager
+from backend.app.core.manager.metadata_manager import ClothingMetadataManager
+from backend.app.core.manager.embedding_manager import ClothingEmbeddingManager
 
 agent_name = "vision_agent"
 
