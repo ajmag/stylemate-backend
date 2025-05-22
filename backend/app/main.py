@@ -22,7 +22,7 @@ logging.basicConfig(
 
 # Initialize FastAPI app
 app = FastAPI(
-    lifespan=lifespan,
+    # lifespan=lifespan,
     title=settings.PROJECT_NAME,
     openapi_url=f"{settings.API_V1_STR}/openapi.json", # where the documentation will be available
 )
