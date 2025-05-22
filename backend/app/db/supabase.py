@@ -7,6 +7,3 @@ def get_supabase_client() -> Client:
         raise ValueError("Supabase URL and key must be set in environment variables.")
     
     return create_client(settings.SUPABASE_URL, settings.SUPABASE_KEY)
-
-# Create a Supabase client instance for reuse
-supabase_client = get_supabase_client()

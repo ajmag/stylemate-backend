@@ -127,3 +127,10 @@ class ClothingResponse(ClothingDB):
     # allows automatic conversion from ORM objects to this Pydantic model
     class Config:
         orm_mode = True
+
+class RecommendationType(str, Enum):
+    """Model for clothing recommendations."""
+    SIMILAR = "similar"
+    COMPLEMENTARY = "complementary"
+    OUTFIT = "outfit"
+    
