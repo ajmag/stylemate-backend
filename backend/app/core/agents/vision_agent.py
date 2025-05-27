@@ -18,7 +18,7 @@ class VisionProcessingAgent(Agent):
         self.embedding_manager = ClothingEmbeddingManager()     
 
 
-    async def run(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def run(self, input_data: Dict[str, Any], user_id: str) -> Dict[str, Any]:
         """Process an image and extract clothing information."""
 
         image_data = input_data.get("image_data")
@@ -30,8 +30,8 @@ class VisionProcessingAgent(Agent):
         classification_result = await self._classify_image(image_data)
 
         # Step 2: Extract clothing metadata
-        self.logger.info("Extracting clothing metadata")
-        fashion_metadata = self.metadata_manager.extract_clothing_metadata(classification_result)
+        fashion_metadata = self.metadata_manager.extract_clothing_metadata(classification_result, user_id)
+        self.logger.info(f"Extracted fashion metadata: {fashion_metadata}")
 
         # Step 3: Get embeddings for similarity search
         self.logger.info("Generating image embedding")
@@ -99,5 +99,5 @@ class VisionProcessingAgent(Agent):
         self.logger.debug(f"Vision API response: {result}")
         return result
     
-
+    
     

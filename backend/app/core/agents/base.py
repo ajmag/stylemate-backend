@@ -1,5 +1,6 @@
 from typing import Dict, Any, Optional
 import logging
+from abc import ABC, abstractmethod
 
 class Agent:
     """Base class for all agents"""
@@ -9,9 +10,10 @@ class Agent:
         self.context: Dict[str, Any]= {}
         self.logger = logging.getLogger(f"agent.{name}")
     
+    @abstractmethod
     async def run(self, input_data: Dict[str, Any]) -> Dict[str, Any]:
         """Process input and return output. To be implemented by subclasses."""
-        raise NotImplementedError
+        pass
     
     def update_context(self, key: str, value: Any) -> None:
         """Updates the Agent's context with new info"""

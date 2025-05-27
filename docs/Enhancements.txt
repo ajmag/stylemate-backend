@@ -1,0 +1,6 @@
+
+
+- Right Now the metadata pipeline is doing manual mapping to our models and what the google vision api is giving us. 
+We created a heuristics that kind of works at the moment but for more complex images this is not ideal.
+I think we need to incoporate another ai api or create our own smaller model to do this mapping better 
+- We also are currently creating a emnbeddings ourself, and we may not want this for future interations

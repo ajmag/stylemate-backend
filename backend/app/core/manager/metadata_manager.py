@@ -1,4 +1,5 @@
-from typing import Dict, Any, List, Tuple
+from typing import Dict, Any, List
+from enum import Enum
 import logging
 from backend.app.core.mapping.clothing_mappings import (CLOTHING_TYPE_MAPPING, CLOTHING_CATEGORY_MAPPING, DEFAULT_CATEGORIES, COLOR_MAPPING, PATTERN_KEYWORDS,SEASON_MAPPING, SEASON_FABRIC_MAPPING, COLOR_SEASON_MAPPING, OCCASION_MAPPING)
 from backend.app.models.clothing import ClothingType, ClothingCategory, Season, Occasion
@@ -13,7 +14,7 @@ class ClothingMetadataManager:
         self.logger.info("ClothingMetadataManager initialized")
         self.clothing_matcher = ColorMatcher(COLOR_MAPPING)
 
-    def extract_clothing_metadata(self, api_result: Dict[str, Any]) -> Dict[str, Any]: 
+    def extract_clothing_metadata(self, api_result: Dict[str, Any], user_id: str) -> Dict[str, Any]: 
             """Extract clothing type, category, color, pattern from API results."""
             self.logger.info("Starting metadata extraction")
 
@@ -27,7 +28,8 @@ class ClothingMetadataManager:
                 "pattern": "solid",  # Default pattern
                 "seasons": [Season.ALL],  # Default season
                 "occasions": [Occasion.CASUAL],  # Default occasion
-                "description": None
+                "description": None,
+                "user_id": user_id
             }
 
             clothing_type = self._determine_clothing_type(api_result)
@@ -62,9 +64,29 @@ class ClothingMetadataManager:
             result["description"] = self._generate_description(result)
 
             self.logger.info(f"Extracted metadata: {result}")
-            return result
+            
+            return self.serialize_metadata(result)
     
 
+    def serialize_metadata(self, metadata: Dict[str, Any]) -> Dict[str, Any]:
+        """Convert metadata to a valid format for storage into chromaDB."""
+        self.logger.debug("Serializing metadata for storage")
+        
+        def to_valid_type(value: Any) -> Any:
+            if isinstance(value, Enum):
+                return value.value
+            elif isinstance(value, list):
+                return ", ".join([to_valid_type(item) for item in value])
+            elif isinstance(value, dict):
+                return {key: to_valid_type(val) for key, val in value.items()} 
+            else:
+                return value
+        
+        result = {key: to_valid_type(value) for key, value in metadata.items()}
+        self.logger.debug(f"Serialized metadata: {result}")
+        return result
+        
+    
     def _process_vision_labels(self, api_result: Dict[str, Any], keyword_mapping: Dict, object_weight: float = 1.5) -> Dict[Any, float]:
             """Generic method to process labels and objects against a keyword mapping."""
             self.logger.debug(f"Processing vision labels with keyword mapping: {list(keyword_mapping.keys())}")
