@@ -4,7 +4,6 @@ import chromadb
 from backend.app.db.chromadb import ChromaDBClient
 from backend.app.models.clothing import RecommendationType
 import json
-import numpy as np
  
 
 agent_name = "recommendation_agent"

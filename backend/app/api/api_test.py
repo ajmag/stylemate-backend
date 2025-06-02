@@ -1,13 +1,12 @@
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 import logging
-import numpy as np
 from backend.app.core.agents.vision_agent import VisionProcessingAgent
 from backend.app.core.agents.recommendation_agent import RecommendationAgent
 from backend.app.db.chromadb import ChromaDBClient
-import io
-from PIL import Image
+from backend.app.db.supabasedb import SupaBaseClient
 import uuid
 import json
+
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -16,6 +15,8 @@ _collection_name = "test_collection_v1"
 _testing_user_id = "test_user"
 _test_collection_name = "test_collection_v2"
 
+_data_base_name = "clothing_items"
+_bucket_name = "clothing-images"
 
 
 @router.post("/test-vision-api")
@@ -32,14 +33,33 @@ async def test_vision_api(file: UploadFile = File(...),
         # Process the image and get metadata and embeddings
         result = await agent.run({"image_data": image_data}, user_id=_testing_user_id)
 
-        # Store the result in ChromaDB
+        # steps to add the image and user_id/item_id into supabase here  
+        sb_client = SupaBaseClient()
+        sb_client.get_supabase_client() # now client is init 
+
+        file_path = f"{_testing_user_id}/{uuid.uuid4()}.{file.filename.split(".")[-1]}"
+        file_type = file.content_type
+
+        # add image into storage bucket -> user_id/image.png 
+        storage_response = await sb_client.add_image_to_bucket(file_path, 
+                                                               _bucket_name, 
+                                                               image_data, 
+                                                               file_type)
+        print(f"storage response: {storage_response}")
+
+        # add image metadata into db, path/user id will be harcoded until auth is created 
+        db_response = await sb_client.add_metadat_into_db(result["fashion_metadata"], 
+                                                    file_path, 
+                                                    _data_base_name)
+
+        item_id = db_response.data[0]["id"]
+
+        # Update the database record with embedding_id = item_id 
+        await sb_client.update_db(_data_base_name, item_id, "embedding_id")
+
+        # Store metadata results into chromadb
         db_client = ChromaDBClient()
         collection = db_client.get_or_create_collection(_collection_name)
-
-        item_id = "item_" + str(uuid.uuid4())
-
-        # Not sure if we want to keep the documents as the intitial classification result
-        # I guess when we add the embeddings as well ChromaDB will use your provided embeddings directly, ignoring any default embedding functions
     
         try:
             collection.add(
@@ -52,10 +72,18 @@ async def test_vision_api(file: UploadFile = File(...),
         except Exception as e:
             logger.error(f"Error adding item to collection: {str(e)}")
             raise HTTPException(status_code=500, detail=f"Error adding item to collection: {str(e)}")
-         
+
+        # get the public url from storage to be returned to front end 
+        image_url = sb_client.get_public_url(_bucket_name, file_path)
+        # this will get the emebdding_id where the id is equal to the recently created item)
+        db_embedding_id = await sb_client.get_data_from_table(_data_base_name, "embedding_id", "id", item_id )
+       
         # Return the result of the processing
         return {
             "success": True,
+            "image_url": image_url,
+            "db_response" : db_response.data[0],
+            "db_embedding_id" : db_embedding_id,
             "fashion_metadata" : result["fashion_metadata"],
             "classification_result": {
                 "labels": result["classification_result"].get("labels", []),
