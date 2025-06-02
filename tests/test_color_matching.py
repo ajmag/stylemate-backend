@@ -1,9 +1,6 @@
 import unittest
 import sys
 import os
-import logging
-from skimage import color
-import numpy as np
 
 # Add the project root to the path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))

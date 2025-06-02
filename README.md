@@ -20,23 +20,28 @@ The current phase of development concentrates on building a robust backend with 
 #### Image Processing Pipeline
 
 - Image preprocessing and normalization
-- Clothing detection and segmentation
+- Clothing classification
 - Feature extraction for clothing categorization
 - Color analysis and pattern recognition
 
-#### Vector Database Integration - TODO
+#### Vector Database Integration
 
 - Generation of clothing embeddings
 - Storage in ChromaDB for efficient similarity search
 - Metadata association with embeddings
 - Query optimizations for recommendation lookups
 
-#### Recommendation Engine - TODO
+#### Supabase Database Integration
+
+- Storage of image and clothinhg metadata
+
+#### Recommendation Engine IN-PROGRESS
 
 - Context-aware outfit generation (occasion, weather, style)
 - Clothing compatibility assessment
 - Style consistency enforcement
 - User preference learning
+- Agent Orchestration
 
 #### API Development
 

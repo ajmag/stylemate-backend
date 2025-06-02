@@ -2,13 +2,9 @@ import os
 import chromadb
 from backend.app.config import settings
 import logging
-from chromadb.utils.data_loaders import ImageLoader
-from backend.app.core.embedding.clip_singleton import get_embedding_class 
 import numpy as np
 from io import BytesIO
 from PIL import Image
-
-
 
 
 class ChromaDBClient:
@@ -22,7 +18,7 @@ class ChromaDBClient:
         os.makedirs(settings.CHROMA_DB_DIR, exist_ok=True)
         self.client = chromadb.PersistentClient(path=settings.CHROMA_DB_DIR)
 
-        self.clip_embedding_function = get_embedding_class()
+        # self.clip_embedding_function = get_embedding_class()
 
 
     def get_or_create_collection(self, collection_name: str) -> chromadb.Collection:
@@ -55,6 +51,7 @@ class ChromaDBClient:
         return self.client.get_or_create_collection(name=collection_name, 
                                                     embedding_function=self.clip_embedding_function)
     
+
     @staticmethod
     def convert_bytes_to_image(image_data: bytes) -> np.ndarray:
         """
