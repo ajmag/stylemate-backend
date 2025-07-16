@@ -37,6 +37,7 @@ async def test_vision_api(file: UploadFile = File(...),
         sb_client = SupaBaseClient()
         sb_client.get_supabase_client() # now client is init 
 
+        # Generate a unique file path for the image
         file_path = f"{_testing_user_id}/{uuid.uuid4()}.{file.filename.split(".")[-1]}"
         file_type = file.content_type
 
@@ -61,6 +62,7 @@ async def test_vision_api(file: UploadFile = File(...),
         db_client = ChromaDBClient()
         collection = db_client.get_or_create_collection(_collection_name)
     
+        # add the item with the same id as the embedding_id in supabase
         try:
             collection.add(
                 ids=[item_id],
@@ -115,9 +117,10 @@ async def test_getting_recommendations(file: UploadFile = File(...),
         recommendations = await recommendation_agent.run(
             query_item=vision_result,
             user_id =_testing_user_id,
-            limit=10,
+            bucket_name = _bucket_name,
+            limit=5,
             collection_name=_collection_name,
-            recommendation_type="outfit"
+            recommendation_type="outfit",
         )
 
         return {
