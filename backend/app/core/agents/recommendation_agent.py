@@ -1,7 +1,6 @@
 from typing import Dict, Any, List
 from .base import Agent
 import chromadb
-import supabase
 from backend.app.db.chromadb import ChromaDBClient
 from backend.app.db.supabasedb import SupaBaseClient
 from backend.app.models.clothing import RecommendationType
@@ -61,20 +60,20 @@ class RecommendationAgent(Agent):
             self.logger.error("No clothing type found")
             raise ValueError("Query item must contain a clothing type")
         
-        clothing_occasions = clothing_metadata.get("occasions", [])
+        clothing_occasions = clothing_metadata.get("occasions", "")
         clothing_occasions = '{' + clothing_occasions + '}'
         
         if not clothing_occasions:
             self.logger.warning("No occasions found, defaulting to ['casual']")
-            clothing_occasions = ["casual"]
+            clothing_occasions = "casual"
         
-        clothing_seasons = clothing_metadata.get("seasons", [])
+        clothing_seasons = clothing_metadata.get("seasons", "")
         clothing_seasons = '{' + clothing_seasons + '}'
         if not clothing_seasons:
             self.logger.warning("No seasons found, defaulting to ['all']")
-            clothing_seasons = ["all"]
-        
-        self.logger.info(f"Query item deails: query_embedding: {query_embedding}, clothing_type: {clothing_type}, clothing_ocasion: {clothing_occasions}, clothing_season: {clothing_seasons}")
+            clothing_seasons = "all"
+
+        self.logger.info(f"Query item details: query_embedding: {query_embedding}, clothing_type: {clothing_type}, clothing_occasion: {clothing_occasions}, clothing_season: {clothing_seasons}")
 
         chroma_collection = self.db_client.get_or_create_collection(collection_name)
         supabase_client = self.spa_client  # Use the SupaBaseClient instance directly
@@ -107,11 +106,11 @@ class RecommendationAgent(Agent):
                           user_id: str, 
                           limit: int, 
                           clothing_type: str,
-                          clothing_ocasions: List[str],
+                          clothing_occasions: List[str],
                           clothing_seasons: List[str],
                           bucket_name: str) -> List[Dict[str, Any]]: 
         """Create a simple outfit based on the queired clothing items."""
-        self.logger.info(f"Creating a simple outfit for user {user_id} which is a {clothing_type} and has these ocasions -> {clothing_ocasions} as well for these season -> {clothing_seasons}")
+        self.logger.info(f"Creating a simple outfit for user {user_id} which is a {clothing_type} and has these ocasions -> {clothing_occasions} as well for these season -> {clothing_seasons}")
 
         # Query the supabase database for clothing items that match the user's wardrobe and the specified filters
         supabase_query_result = supabase_client.get_supabase_client().table("clothing_items").select("embedding_id", "image_path").filter(
@@ -119,7 +118,7 @@ class RecommendationAgent(Agent):
         ).filter(
             "type", "neq", clothing_type  # Exclude the same clothing type
         ).filter(
-            "occasions", "ov", clothing_ocasions
+            "occasions", "ov", clothing_occasions
         ).filter(
             "seasons", "ov",  clothing_seasons
         ).execute()
@@ -164,7 +163,7 @@ class RecommendationAgent(Agent):
                 bucket_name
             )
 
-            # go through and get each of the url paths of reccommendation items to return to users
+            # go through and get each of the url paths of recommendation items to return to users
             image_urls = []
             for file_path in file_paths:
                 # Use your wrapper method
@@ -181,13 +180,12 @@ class RecommendationAgent(Agent):
             return self._format_results(outfit_items)
         
         except Exception as e:
-            self.logger.error(f"Error querying similar items for user {user_id}: {str(e)} from chromadb")
-            raise RuntimeError(f"Error querying similar items for user {user_id}: {str(e)} from chromadb")        
-    
-    
-    async def _get_similar_items(self, collection: chromadb.Collection, 
-                                 query_embedding: List[float], 
-                                 limit: int, 
+            raise RuntimeError(f"Error querying for outfit recommendations for user {user_id}: {str(e)} from chromadb and supabase")
+
+
+    async def _get_similar_items(self, collection: chromadb.Collection,
+                                 query_embedding: List[float],
+                                 limit: int,
                                  user_id: str) -> List[Dict[str, Any]]:
         """Get similar items based on the query embedding."""
         self.logger.info("Getting similar items")
