@@ -50,7 +50,7 @@ class RecommendationAgent(Agent):
             self.logger.error("No embeddings found in the query item")
             raise ValueError("Query item must contain embeddings")
         
-        clothing_metadata = query_item.get("fashion_metadata", "") # not working FIXME
+        clothing_metadata = query_item.get("fashion_metadata", "") 
         if not clothing_metadata:
             self.logger.error("No fashion metadata found in the query item")
             raise ValueError("Query item must contain fashion metadata")
@@ -60,6 +60,8 @@ class RecommendationAgent(Agent):
             self.logger.error("No clothing type found")
             raise ValueError("Query item must contain a clothing type")
         
+        # Need to construct the occasions and seasons as lists {} format
+        # so that we can filter the supabase query correctly
         clothing_occasions = clothing_metadata.get("occasions", "")
         clothing_occasions = '{' + clothing_occasions + '}'
         
@@ -67,6 +69,8 @@ class RecommendationAgent(Agent):
             self.logger.warning("No occasions found, defaulting to ['casual']")
             clothing_occasions = "casual"
         
+        # Construct the seasons as lists {} format
+        # so that we can filter the supabase query correctly
         clothing_seasons = clothing_metadata.get("seasons", "")
         clothing_seasons = '{' + clothing_seasons + '}'
         if not clothing_seasons:
@@ -76,7 +80,6 @@ class RecommendationAgent(Agent):
         self.logger.info(f"Query item details: query_embedding: {query_embedding}, clothing_type: {clothing_type}, clothing_occasion: {clothing_occasions}, clothing_season: {clothing_seasons}")
 
         chroma_collection = self.db_client.get_or_create_collection(collection_name)
-        supabase_client = self.spa_client  # Use the SupaBaseClient instance directly
 
         # based on the recommendation type, we will filter the results
         if recommendation_type == RecommendationType.SIMILAR:
@@ -87,7 +90,7 @@ class RecommendationAgent(Agent):
         
         elif recommendation_type == RecommendationType.OUTFIT:
             return await self._get_outfit(chroma_collection, 
-                                          supabase_client, 
+                                          self.spa_client, 
                                           query_embedding, 
                                           user_id, 
                                           limit, 
@@ -109,11 +112,12 @@ class RecommendationAgent(Agent):
                           clothing_occasions: List[str],
                           clothing_seasons: List[str],
                           bucket_name: str) -> List[Dict[str, Any]]: 
-        """Create a simple outfit based on the queired clothing items."""
-        self.logger.info(f"Creating a simple outfit for user {user_id} which is a {clothing_type} and has these ocasions -> {clothing_occasions} as well for these season -> {clothing_seasons}")
+        """Create a simple outfit based on the queried clothing items."""
+        self.logger.info(f"Creating a simple outfit for user {user_id} which is a {clothing_type} and has these occasions -> {clothing_occasions} as well for these season -> {clothing_seasons}")
 
         # Query the supabase database for clothing items that match the user's wardrobe and the specified filters
-        supabase_query_result = supabase_client.get_supabase_client().table("clothing_items").select("embedding_id", "image_path").filter(
+        supabase_query_result = supabase_client.get_supabase_client(    
+        ).table("clothing_items").select("embedding_id", "image_path").filter(
             "user_id", "eq", user_id
         ).filter(
             "type", "neq", clothing_type  # Exclude the same clothing type
@@ -173,7 +177,7 @@ class RecommendationAgent(Agent):
             if not image_urls:
                 raise ValueError("Could not get the urls from the recommendations")
             
-            self.logger.info(f"Got these urls from the reccommedations {image_urls}")
+            self.logger.info(f"Got these urls from the recommendations {image_urls}")
 
             outfit_items["image_urls"] = image_urls
 
