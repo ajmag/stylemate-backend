@@ -27,7 +27,7 @@ async def upload_clothing_image(
     """
     try: 
         if not file.content_type.startswith('image/'):
-                raise HTTPException(status_code=400, detail="File must be an image")
+            raise HTTPException(status_code=400, detail="File must be an image")
             
         # Read the image data
         image_data = await file.read()

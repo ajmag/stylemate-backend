@@ -30,7 +30,7 @@ class ClothingService:
             vision_agent = VisionProcessingAgent()
             self.logger.info("Processing image with vision agent")
             vision_result = await vision_agent.run(
-                input_data={"image_data": image_data},
+                query_item={"image_data": image_data},
                 user_id=user_id
             )
             self.logger.info(f"Vision agent processed image: {vision_result}")

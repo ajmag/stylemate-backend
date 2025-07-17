@@ -51,7 +51,7 @@ class RecommendationService:
                 query_item=vision_result,
                 user_id=user_id,
                 bucket_name=self._bucket_name,
-                limit=5,
+                limit=limit,
                 collection_name=self._collection_name,
                 recommendation_type=recommendation_type,
             )
