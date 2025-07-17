@@ -1,11 +1,12 @@
 #  will be the FASTAPI entry point
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from backend.app.core.embedding.clip_singleton import get_clip  
-from backend.app.api.api_test import router as test_router
-from backend.app.config import settings
-from contextlib import asynccontextmanager
 import logging
+
+from backend.app.api.routes.api_test import router as test_router
+from backend.app.api.routes.clothing import router as clothing_router
+from backend.app.api.routes.recommendations import router as recommendations_router
+from backend.app.config import settings
 
 logging.basicConfig(
     level=logging.DEBUG,  # Set to DEBUG to see all log messages
@@ -38,7 +39,11 @@ if settings.BACKEND_CORS_ORIGINS:
     )
 
 # route to test the vision agent
-app.include_router(test_router, prefix=settings.API_V1_STR, tags=["test"])
+app.include_router(test_router, prefix=f"{settings.API_V1_STR}/test", tags=["test"])
+
+app.include_router(clothing_router, prefix=f"{settings.API_V1_STR}/clothing", tags=["clothing"])
+
+app.include_router(recommendations_router, prefix=f"{settings.API_V1_STR}/recommendations", tags=["outfit_recommendation"])
 
 # Health check endpoint
 @app.get("/health")
