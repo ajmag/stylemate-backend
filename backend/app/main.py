@@ -45,7 +45,7 @@ app.include_router(test_router, prefix=f"{settings.API_V1_STR}/test", tags=["tes
 
 app.include_router(clothing_router, prefix=f"{settings.API_V1_STR}/clothing", tags=["clothing"])
 
-app.include_router(recommendations_router, prefix=f"{settings.API_V1_STR}/recommendations", tags=["outifit_recommendation"])
+app.include_router(recommendations_router, prefix=f"{settings.API_V1_STR}/recommendations", tags=["outfit_recommendation"])
 
 # Health check endpoint
 @app.get("/health")

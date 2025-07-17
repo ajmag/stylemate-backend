@@ -35,7 +35,7 @@ async def get_recommendations(
         # Read the image data
         image_data = await file.read()
 
-        result = await RecommendationService.get_outfit_recommendation(
+        result = await recommendation_service.get_outfit_recommendation(
             image_data=image_data,
             file_name=file.filename,
             user_id=user_id,

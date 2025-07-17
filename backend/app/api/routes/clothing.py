@@ -48,7 +48,7 @@ async def upload_clothing_image(
             **result # Spread all the service results
         }
     
-    except HTTPException:
+    except HTTPException as e:
         logger.error(f"HTTP error during upload: {e.detail}")
         raise e
     except Exception as e:

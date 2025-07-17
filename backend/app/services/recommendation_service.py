@@ -37,9 +37,9 @@ class RecommendationService:
             # Step 1: Process the image with Vision Agent
             self.logger.info("Processing image with VisionProcessingAgent")
 
-            vision_agent = RecommendationAgent()
-            vision_result = vision_agent.run(
-                query_item={image_data}, 
+            vision_agent = VisionProcessingAgent()
+            vision_result = await vision_agent.run(
+                query_item={"image_data": image_data}, 
                 user_id=user_id
             )
 
@@ -49,11 +49,11 @@ class RecommendationService:
             recommendation_agent = RecommendationAgent()
             recommendations = await recommendation_agent.run(
                 query_item=vision_result,
-                user_id =user_id,
-                bucket_name = self._bucket_name,
+                user_id=user_id,
+                bucket_name=self._bucket_name,
                 limit=5,
-                collection_name= self._collection_name,
-                recommendation_type= recommendation_type,
+                collection_name=self._collection_name,
+                recommendation_type=recommendation_type,
             )
 
             # Step 3: Return structured response
