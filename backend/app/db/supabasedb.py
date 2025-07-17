@@ -59,7 +59,7 @@ class SupaBaseClient():
                         )
         except Exception as e:
             self.logger.error(f"Error adding a image to supabase: {str(e)}")
-            raise RuntimeError(f"Error adding a image to subabase: {str(e)}") 
+            raise RuntimeError(f"Error adding a image to supabase: {str(e)}") 
 
 
     async def add_metadata_into_db(self, 

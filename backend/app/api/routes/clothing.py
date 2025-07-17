@@ -39,8 +39,8 @@ async def upload_clothing_image(
             user_id=user_id
         )
 
-        if not result:
-            raise HTTPException(status_code=500, detail="Error processing clothing image")
+        if not isinstance(result, dict) or "item_id" not in result:
+            raise HTTPException(status_code=500, detail="Error processing clothing image: Invalid result format")
         
         return {
             "success": True,

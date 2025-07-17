@@ -17,9 +17,8 @@ class RecommendationService:
         self.logger = logging.getLogger(__name__)
 
         # Constants - move these to config later
-        self._testing_user_id = "test_user"
         self._bucket_name = "clothing-images"
-        self._collection_name = "clothing_items"
+        self._collection_name = "test_collection_v1"
         self._database_name = "clothing_items"
 
 
@@ -39,7 +38,7 @@ class RecommendationService:
 
             vision_agent = VisionProcessingAgent()
             vision_result = await vision_agent.run(
-                query_item={"image_data": image_data}, 
+                input_data={"image_data": image_data}, 
                 user_id=user_id
             )
 

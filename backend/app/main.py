@@ -2,9 +2,7 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 import logging
-# from contextlib import asynccontextmanager
 
-# from backend.app.core.embedding.clip_singleton import get_clip  
 from backend.app.api.routes.api_test import router as test_router
 from backend.app.api.routes.clothing import router as clothing_router
 from backend.app.api.routes.recommendations import router as recommendations_router
